@@ -11,7 +11,7 @@ class DroneControlSim:
         self.sim_step = 0.002 #仿真步长
         self.drone_states = np.zeros((int(self.sim_time / self.sim_step), 12)) #无人机状态12个
         self.time = np.zeros((int(self.sim_time / self.sim_step),)) #当前仿真时间
-        self.rate_cmd = np.zeros((int(self.sim_time / self.sim_step), 3)) #期望角速率pqr
+        self.rate_cmd = np.zeros((int(self.sim_time / self.sim_step), 3)) #期望角速率pqr 单位rad/s
         self.attitude_cmd = np.zeros((int(self.sim_time / self.sim_step), 3)) #期望姿态角
         self.velocity_cmd = np.zeros((int(self.sim_time / self.sim_step), 3)) #期望速度
         self.position_cmd = np.zeros((int(self.sim_time / self.sim_step), 3)) #期望位置
@@ -106,7 +106,7 @@ class DroneControlSim:
             self.time[self.pointer] = self.pointer * self.sim_step  # 计算当前仿真时间
             thrust_cmd = -10  # 控制输入-推力和力矩 4.9/0.5=9.8 与重力平衡就悬停在空中了
             #M = np.zeros((3,))
-            cmd = [1,2,3]# 输入期望角速率
+            cmd = [0.1,0.2,0.3]# 输入期望角速率 单位 rad/s
             M = self.rate_controller(cmd) #计算出控制力矩
             dx = self.drone_dynamics(thrust_cmd, M)  # 调用了 drone_dynamics 方法，根据当前飞行器状态和控制输入，计算了飞行器状态的变化率（即飞行器动力学模型）
             self.drone_states[self.pointer + 1] = self.drone_states[self.pointer] + dx * self.sim_step  # 将计算得到的飞行器状态的变化率乘以仿真步长，并加到当前时刻的飞行器状态上，从而得到下一个时间步长的飞行器状态。
@@ -155,10 +155,10 @@ class DroneControlSim:
         ax1[3, 0].set_ylabel('p[rad/s]')
         ax1[3, 1].plot(self.time, self.drone_states[:, 10])
         ax1[3, 1].plot(self.time, self.rate_cmd[:, 1])
-        ax1[3, 0].set_ylabel('q[rad/s]')
+        ax1[3, 1].set_ylabel('q[rad/s]')
         ax1[3, 2].plot(self.time, self.drone_states[:, 11])
         ax1[3, 2].plot(self.time, self.rate_cmd[:, 2])
-        ax1[3, 0].set_ylabel('r[rad/s]')
+        ax1[3, 2].set_ylabel('r[rad/s]')
 
 
 if __name__ == "__main__":
