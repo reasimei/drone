@@ -78,8 +78,8 @@ class DroneControlSim:
         q = self.drone_states[self.pointer, 10]
         r = self.drone_states[self.pointer, 11]
         rate_current = [p, q, r] #当前角速率
-        self.kp = 0.004 #kp小一点，控制力矩小一点，慢过渡
-        self.ki = 0.00
+        self.kp = 0.01 #kp小一点，控制力矩小一点，慢过渡
+        self.ki = 0.000
         self.kd = 0
         error = [desire-current for desire,current in zip(cmd, rate_current)] #计算偏差
         self.ierror = [ie+e*self.sim_step for ie,e in zip(self.ierror, error)] #误差积分
@@ -89,7 +89,7 @@ class DroneControlSim:
         return M
         #pass
 
-    def attitude_controller(self, cmd):
+    def attitude_controller(self, cmd):#输入期望姿态角，输出控制力矩
         # Input: cmd np.array (3,) attitude commands
         # Output: M np.array (3,) rate commands
         self.attitude_cmd[self.pointer] = cmd
@@ -99,7 +99,7 @@ class DroneControlSim:
         attitude_current = [phi, theta, psi] #当前姿态角
         self.kp = 0.6
         self.ki = 0
-        self.kd = 0
+        self.kd = 0.1
         error = [desire-current for desire,current in zip(cmd, attitude_current)] #计算偏差
         self.ierror = [ie+e*self.sim_step for ie,e in zip(self.ierror, error)] #误差积分
         derror = [e-pe for e,pe in zip(error, self.perror)] #误差微分
