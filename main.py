@@ -97,14 +97,15 @@ class DroneControlSim:
         theta = self.drone_states[self.pointer, 7]
         psi = self.drone_states[self.pointer, 8]
         attitude_current = [phi, theta, psi] #当前姿态角
-        self.kp = 0.6
+        self.kp = 1.5
         self.ki = 0
         self.kd = 0.1
         error = [desire-current for desire,current in zip(cmd, attitude_current)] #计算偏差
         self.ierror = [ie+e*self.sim_step for ie,e in zip(self.ierror, error)] #误差积分
         derror = [e-pe for e,pe in zip(error, self.perror)] #误差微分
         rate = [self.kp * e + self.ki * ie + self.kd * de for e,ie,de in zip(error,self.ierror,derror)] #pid 期望角速率
-        M = self.rate_controller(rate)
+        M = self.rate_controller(rate) #调用角速率控制输出控制力矩
+        M[2]*=8 #减小psi超调
         self.perror = error
         return M
         #pass
@@ -112,7 +113,23 @@ class DroneControlSim:
     def velocity_controller(self, cmd):
         # Input: cmd np.array (3,) velocity commands
         # Output: M np.array (2,) phi and theta commands and thrust cmd
-        pass
+        self.velocity_cmd[self.pointer] = cmd
+        vx = self.drone_states[self.pointer, 3]
+        vy = self.drone_states[self.pointer, 4]
+        vz = self.drone_states[self.pointer, 5]
+        velocity_current = [vx, vy, vz] #当前速度
+        self.kp = 0.01
+        self.ki = 0
+        self.kd = 0
+        error = [desire-current for desire,current in zip(cmd, velocity_current)] #计算偏差
+        self.ierror = [ie+e*self.sim_step for ie,e in zip(self.ierror, error)] #误差积分
+        derror = [e-pe for e,pe in zip(error, self.perror)] #误差微分
+        [phi,theta,thrust] = [self.kp * e + self.ki * ie + self.kd * de for e,ie,de in zip(error,self.ierror,derror)] #pid 期望角速率
+        M = self.rate_controller([phi,theta,0])
+        #M[2]*=8 #减小psi超调
+        self.perror = error
+        return M, thrust
+        #pass
 
     def position_controller(self, cmd):
         # Input: cmd np.array (3,) position commands
@@ -124,9 +141,10 @@ class DroneControlSim:
             self.time[self.pointer] = self.pointer * self.sim_step  # 计算当前仿真时间
             thrust_cmd = -10  # 控制输入-推力和力矩 4.9/0.5=9.8 与重力平衡就悬停在空中了
             #M = np.zeros((3,))
-            cmd = [0.3,0.2,0.1]# 输入期望角速率、姿态角 单位 rad/s、rad
-            #M = self.rate_controller(cmd)  # 计算出控制力矩
-            M = self.attitude_controller(cmd) #计算出控制力矩
+            cmd = [3,2,1]# 输入期望角速率、姿态角 单位 rad/s、rad
+            #M = self.rate_controller(cmd)  # 角速率控制 计算出控制力矩
+            #M = self.attitude_controller(cmd) # 姿态角控制 计算出控制力矩
+            M, thrust_cmd = self.velocity_controller(cmd)
             dx = self.drone_dynamics(thrust_cmd, M)  # 调用了 drone_dynamics 方法，根据当前飞行器状态和控制输入，计算了飞行器状态的变化率（即飞行器动力学模型）
             self.drone_states[self.pointer + 1] = self.drone_states[self.pointer] + dx * self.sim_step  # 将计算得到的飞行器状态的变化率乘以仿真步长，并加到当前时刻的飞行器状态上，从而得到下一个时间步长的飞行器状态。
         self.time[-1] = self.sim_time  # 循环结束后，最后一个时间步长的仿真时间被赋值为仿真总时间，以确保时间的连续性。
