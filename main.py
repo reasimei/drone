@@ -124,7 +124,7 @@ class DroneControlSim:
         error = [desire-current for desire,current in zip(cmd, velocity_current)] #计算偏差
         self.ierror = [ie+e*self.sim_step for ie,e in zip(self.ierror, error)] #误差积分
         derror = [e-pe for e,pe in zip(error, self.perror)] #误差微分
-        #vx-theta vy-phi vz-thrust
+        #vx-theta vx&vy-phi vz-thrust
         theta = -(0.25*self.kp * error[0] + self.ki * self.ierror[0] + 100000*self.kd * derror[0])
         while(theta>3.14/3):theta-=3.14/3
         while(theta<-3.14/3):theta+=3.14/3
