@@ -125,16 +125,16 @@ class DroneControlSim:
         self.ierror = [ie+e*self.sim_step for ie,e in zip(self.ierror, error)] #误差积分
         derror = [e-pe for e,pe in zip(error, self.perror)] #误差微分
         #vx-theta vy-phi vz-thrust
-        theta = -(0.9*self.kp * error[0] + self.ki * self.ierror[0] + 100000*self.kd * derror[0])
-        while(theta>3.14):theta-=3.14
-        while(theta<-3.14):theta+=3.14
-        phi = 0.05*self.kp * error[1] + self.ki * self.ierror[1] + self.kd * derror[1]
-        while (phi > 3.14): phi -= 3.14
-        while (phi < -3.14): phi += 3.14
+        theta = -(0.25*self.kp * error[0] + self.ki * self.ierror[0] + 100000*self.kd * derror[0])
+        while(theta>3.14/3):theta-=3.14/3
+        while(theta<-3.14/3):theta+=3.14/3
+        phi = 0.4*self.kp * (error[1]+error[0]) + self.ki * (self.ierror[1]+self.ierror[0]) + self.kd * (derror[1]+derror[0])
+        while (phi > 3.14/2): phi -= 3.14/2
+        while (phi < -3.14/2): phi += 3.14/2
         thrust = -self.m * self.g + 100 * self.kp * error[2] + self.ki * self.ierror[2] + self.kd * derror[2]
         #[theta,phi,thrust] = [self.kp * e + self.ki * ie + self.kd * de for e,ie,de in zip(error,self.ierror,derror)] #pid 期望角速率
         M = self.attitude_controller([phi,theta,0])
-        print("theta=",theta,"phi=\n",phi)
+        #print("theta=",theta,"phi=\n",phi)
         self.perror = error
         return M, thrust
         #pass
@@ -149,7 +149,7 @@ class DroneControlSim:
             self.time[self.pointer] = self.pointer * self.sim_step  # 计算当前仿真时间
             thrust_cmd = -4.9  # 控制输入-推力和力矩 4.9/0.5=9.8 推力为-4.9时与重力平衡就悬停在空中了
             #M = np.zeros((3,))
-            cmd = [4,2,3] #输入期望角速率rad/s、姿态角rad、速度m/s
+            cmd = [12,6,10] #输入期望角速率rad/s、姿态角rad、速度m/s
             #M = self.rate_controller(cmd)  # 角速率控制 计算出控制力矩
             #M = self.attitude_controller(cmd) # 姿态角控制 计算出控制力矩
             M, thrust_cmd = self.velocity_controller(cmd)
